@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">GreenPath</string>
+    <string name="lookUpPath">산책로 조회</string>
+    <string name="makePath">산책로 생성</string>
+    <string name="setting">설정</string>
+    <string name="walk">산책</string>
 </resources>

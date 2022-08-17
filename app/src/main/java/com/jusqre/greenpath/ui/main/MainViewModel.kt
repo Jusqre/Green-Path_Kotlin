@@ -1,4 +1,4 @@
-package com.jusqure.greenpath.ui.main
+package com.jusqre.greenpath.ui.main
 
 import androidx.lifecycle.ViewModel
 

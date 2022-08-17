@@ -1,4 +1,4 @@
-package com.jusqure.greenpath
+package com.jusqre.greenpath
 
 import org.junit.Test
 

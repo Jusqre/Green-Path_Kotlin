@@ -1,4 +1,4 @@
-package com.jusqure.greenpath.ui.main
+package com.jusqre.greenpath.ui.setting
 
 import androidx.lifecycle.ViewModelProvider
 import android.os.Bundle
@@ -6,26 +6,26 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import com.jusqure.greenpath.R
+import com.jusqre.greenpath.R
 
-class MainFragment : Fragment() {
+class SettingFragment : Fragment() {
 
     companion object {
-        fun newInstance() = MainFragment()
+        fun newInstance() = SettingFragment()
     }
 
-    private lateinit var viewModel: MainViewModel
+    private lateinit var viewModel: SettingViewModel
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View {
-        return inflater.inflate(R.layout.main_fragment, container, false)
+    ): View? {
+        return inflater.inflate(R.layout.setting_fragment, container, false)
     }
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
-        viewModel = ViewModelProvider(this).get(MainViewModel::class.java)
+        viewModel = ViewModelProvider(this).get(SettingViewModel::class.java)
         // TODO: Use the ViewModel
     }
 

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/navigation_walk"
+        android:icon="@drawable/ic_baseline_directions_walk_24"
+        android:title="@string/walk" />
+
+    <item
+        android:id="@+id/navigation_setting"
+        android:icon="@drawable/ic_baseline_person_pin_24"
+        android:title="@string/setting" />
+
+</menu>

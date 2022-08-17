@@ -1,4 +1,4 @@
-package com.jusqure.greenpath
+package com.jusqre.greenpath
 
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4
