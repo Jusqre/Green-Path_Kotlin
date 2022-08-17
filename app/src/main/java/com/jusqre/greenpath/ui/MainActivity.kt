@@ -8,7 +8,7 @@ import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.jusqre.greenpath.R
 import com.jusqre.greenpath.databinding.ActivityMainBinding
 import com.jusqre.greenpath.ui.main.MainViewModel
-import androidx.navigation.*
+import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.*
 
 class MainActivity : AppCompatActivity() {
@@ -25,7 +25,8 @@ class MainActivity : AppCompatActivity() {
             }
         val navView: BottomNavigationView = binding.navView
 
-        val navController = findNavController(R.id.nav_host_fragment_activity_main)
+        val navHostFragment = supportFragmentManager.findFragmentById(R.id.nav_host_fragment_activity_main) as NavHostFragment
+        val navController = navHostFragment.navController
         val appBarConfiguration = AppBarConfiguration(
             setOf(
                 R.id.navigation_walk, R.id.navigation_setting
