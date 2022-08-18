@@ -4,4 +4,8 @@
     <string name="makePath">산책로 생성</string>
     <string name="setting">설정</string>
     <string name="walk">산책</string>
+    <string name="setting_main">설정화면</string>
+    <string name="user_info">사용자 정보</string>
+    <string name="import_trail">산책로 불러오기</string>
+    <string name="todo">TODO</string>
 </resources>
