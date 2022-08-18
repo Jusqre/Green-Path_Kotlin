@@ -4,13 +4,13 @@
     <option name="filePathToZoomLevelMap">
       <map>
         <entry key="app/src/main/res/drawable/ic_baseline_near_me_24.xml" value="0.1875" />
-        <entry key="app/src/main/res/layout/activity_main.xml" value="0.2797470092773438" />
+        <entry key="app/src/main/res/layout/activity_main.xml" value="0.1" />
         <entry key="app/src/main/res/layout/layout.xml" value="0.19610507246376813" />
         <entry key="app/src/main/res/layout/main_activity.xml" value="0.19610507246376813" />
         <entry key="app/src/main/res/layout/main_fragment.xml" value="0.1" />
         <entry key="app/src/main/res/layout/main_fragment2.xml" value="0.19610507246376813" />
-        <entry key="app/src/main/res/layout/setting_fragment.xml" value="0.19610507246376813" />
-        <entry key="app/src/main/res/layout/walk_fragment.xml" value="0.24946746826171876" />
+        <entry key="app/src/main/res/layout/setting_fragment.xml" value="0.1" />
+        <entry key="app/src/main/res/layout/walk_fragment.xml" value="0.1" />
         <entry key="app/src/main/res/menu/bottom_nav_menu.xml" value="0.2953125" />
       </map>
     </option>

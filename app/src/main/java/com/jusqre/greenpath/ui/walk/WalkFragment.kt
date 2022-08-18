@@ -20,7 +20,7 @@ class WalkFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View {
         _binding = WalkFragmentBinding.inflate(inflater, container, false)
-
+        _binding.lifecycleOwner = viewLifecycleOwner
         binding.buttonMakeTrail.setOnClickListener {
             Toast.makeText(this.context,"산책로 생성 클릭됨",Toast.LENGTH_SHORT).show()
         }
@@ -31,10 +31,5 @@ class WalkFragment : Fragment() {
 
         return binding.root
     }
-
-    override fun onResume() {
-        super.onResume()
-    }
-
 
 }
