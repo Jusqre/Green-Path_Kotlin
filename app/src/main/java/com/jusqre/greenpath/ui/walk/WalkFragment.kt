@@ -6,10 +6,10 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
-import com.jusqre.greenpath.databinding.WalkFragmentBinding
+import com.jusqre.greenpath.databinding.FragmentWalkBinding
 
 class WalkFragment : Fragment() {
-    private lateinit var _binding: WalkFragmentBinding
+    private lateinit var _binding: FragmentWalkBinding
     private val binding get() = _binding
 
     private lateinit var viewModel: WalkViewModel
@@ -19,7 +19,7 @@ class WalkFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        _binding = WalkFragmentBinding.inflate(inflater, container, false)
+        _binding = FragmentWalkBinding.inflate(inflater, container, false)
         _binding.lifecycleOwner = viewLifecycleOwner
         binding.buttonMakeTrail.setOnClickListener {
             Toast.makeText(this.context,"산책로 생성 클릭됨",Toast.LENGTH_SHORT).show()

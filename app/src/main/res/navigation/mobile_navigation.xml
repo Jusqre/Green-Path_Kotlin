@@ -8,11 +8,11 @@
     <fragment
         android:id="@+id/navigation_walk"
         android:name="com.jusqre.greenpath.ui.walk.WalkFragment"
-        tools:layout="@layout/walk_fragment" />
+        tools:layout="@layout/fragment_walk" />
 
     <fragment
         android:id="@+id/navigation_setting"
         android:name="com.jusqre.greenpath.ui.setting.SettingFragment"
-        tools:layout="@layout/setting_fragment" />
+        tools:layout="@layout/fragment_setting" />
 
 </navigation>
