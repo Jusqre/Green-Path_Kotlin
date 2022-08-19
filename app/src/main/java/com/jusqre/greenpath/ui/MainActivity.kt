@@ -1,7 +1,11 @@
 package com.jusqre.greenpath.ui
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.Matrix
 import android.location.Location
 import android.os.Build
 import android.os.Bundle
@@ -22,11 +26,13 @@ import com.jusqre.greenpath.BuildConfig
 import com.jusqre.greenpath.R
 import com.jusqre.greenpath.databinding.ActivityMainBinding
 import com.jusqre.greenpath.ui.main.MainViewModel
+import com.jusqre.greenpath.util.LocationStore
 import com.skt.Tmap.TMapGpsManager
 import com.skt.Tmap.TMapMarkerItem
 import com.skt.Tmap.TMapView
 
 
+@SuppressLint("UseCompatLoadingForDrawables")
 class MainActivity : AppCompatActivity(), TMapGpsManager.onLocationChangedCallback {
     private lateinit var binding: ActivityMainBinding
     private val _map = MutableLiveData<TMapView>()
@@ -34,10 +40,18 @@ class MainActivity : AppCompatActivity(), TMapGpsManager.onLocationChangedCallba
         get() = _map
     private val mainViewModel: MainViewModel by viewModels()
     private lateinit var navView: BottomNavigationView
+    private lateinit var currentPosition: Location
+    private lateinit var user: Bitmap
 
     @RequiresApi(Build.VERSION_CODES.M)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        user = Bitmap.createScaledBitmap(
+            BitmapFactory.decodeResource(
+                resources,
+                R.drawable.navigation
+            ), 50, 50, true
+        )
         _map.value = TMapView(this).apply {
             this.setSKTMapApiKey(BuildConfig.API_KEY)
         }
@@ -61,8 +75,10 @@ class MainActivity : AppCompatActivity(), TMapGpsManager.onLocationChangedCallba
 
 
         map.value?.let {
-            initMap()
             setUpGPS()
+        }
+        LocationStore.lastLocation.observe(this) {
+            onLocationUpdated(it)
         }
     }
 
@@ -82,7 +98,8 @@ class MainActivity : AppCompatActivity(), TMapGpsManager.onLocationChangedCallba
         if (ActivityCompat.checkSelfPermission(
                 this,
                 Manifest.permission.ACCESS_FINE_LOCATION
-            ) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
+            ) != PackageManager.PERMISSION_GRANTED
+            && ActivityCompat.checkSelfPermission(
                 this,
                 Manifest.permission.ACCESS_COARSE_LOCATION
             ) != PackageManager.PERMISSION_GRANTED
@@ -93,20 +110,42 @@ class MainActivity : AppCompatActivity(), TMapGpsManager.onLocationChangedCallba
             ) //위치권한 탐색 허용 관련 내용
         }
         gps.OpenGps()
-        map.value?.setLocationPoint(gps.location.longitude,gps.location.latitude)
-        map.value?.setCenterPoint(gps.location.longitude,gps.location.latitude)
+        map.value?.moveCamera(gps.location.longitude, gps.location.latitude)
     }
 
-    override fun onLocationChange(location: Location?) {
-        location?.let {
-            println(location)
-            println(map.value)
-            map.value?.setLocationPoint(it.longitude, it.latitude)
-            map.value?.setCenterPoint(it.longitude, it.latitude)
-            map.value?.addMarkerItem("currentLocation", TMapMarkerItem().apply {
-                this.latitude = it.latitude
-                this.longitude = it.longitude
-            })
+    override fun onLocationChange(location: Location) {
+        LocationStore.updateLocation(location)
+    }
+
+    private fun onLocationUpdated(location: Location) {
+        if (!::currentPosition.isInitialized) {
+            currentPosition = location
+            initMap()
+        } else {
+            currentPosition = location
         }
+        map.value?.let {
+            it.moveCamera(location.longitude, location.latitude)
+            it.setUserMarker(location)
+        }
+    }
+
+    private fun TMapView.setUserMarker(location: Location) {
+        this.addMarkerItem("currentPosition", TMapMarkerItem().apply {
+            icon = rotatedBitmap(location.bearing, user)
+            longitude = location.longitude
+            latitude = location.latitude
+        })
+    }
+
+    private fun TMapView.moveCamera(longitude: Double, latitude: Double) {
+        this.setLocationPoint(longitude, latitude)
+        this.setCenterPoint(longitude, latitude)
+    }
+
+    private fun rotatedBitmap(bearing: Float, src: Bitmap): Bitmap {
+        val matrix = Matrix()
+        matrix.postRotate(bearing)
+        return Bitmap.createBitmap(src, 0, 0, src.width, src.height, matrix, true)
     }
 }
