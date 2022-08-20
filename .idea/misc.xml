@@ -3,6 +3,7 @@
   <component name="DesignSurface">
     <option name="filePathToZoomLevelMap">
       <map>
+        <entry key="app/src/main/res/drawable/custom_alert_dialog.xml" value="0.1385" />
         <entry key="app/src/main/res/drawable/ic_baseline_accessibility_new_24.xml" value="0.1" />
         <entry key="app/src/main/res/drawable/ic_baseline_directions_walk_24.xml" value="0.1" />
         <entry key="app/src/main/res/drawable/ic_baseline_navigation_24.xml" value="0.1385" />
