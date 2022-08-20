@@ -73,6 +73,7 @@ class MainActivity : AppCompatActivity(), TMapGpsManager.onLocationChangedCallba
         LocationStore.lastLocation.observe(this) {
             onLocationUpdated(it)
         }
+        initMap()
     }
 
     private fun initMap() {
@@ -113,7 +114,7 @@ class MainActivity : AppCompatActivity(), TMapGpsManager.onLocationChangedCallba
     private fun onLocationUpdated(location: Location) {
         if (!::currentPosition.isInitialized) {
             currentPosition = location
-            initMap()
+            println("not initialized")
         } else {
             currentPosition = location
         }
