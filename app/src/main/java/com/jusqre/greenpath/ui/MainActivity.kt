@@ -2,34 +2,27 @@ package com.jusqre.greenpath.ui
 
 import android.Manifest
 import android.annotation.SuppressLint
+import androidx.annotation.RequiresApi
 import android.content.pm.PackageManager
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.graphics.Matrix
+import android.graphics.*
 import android.location.Location
-import android.os.Build
-import android.os.Bundle
+import android.os.*
 import android.widget.LinearLayout
 import androidx.activity.viewModels
-import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.navigation.fragment.NavHostFragment
-import androidx.navigation.ui.AppBarConfiguration
-import androidx.navigation.ui.setupActionBarWithNavController
-import androidx.navigation.ui.setupWithNavController
+import androidx.navigation.ui.*
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.jusqre.greenpath.BuildConfig
 import com.jusqre.greenpath.R
 import com.jusqre.greenpath.databinding.ActivityMainBinding
 import com.jusqre.greenpath.ui.main.MainViewModel
 import com.jusqre.greenpath.util.LocationStore
-import com.skt.Tmap.TMapGpsManager
-import com.skt.Tmap.TMapMarkerItem
-import com.skt.Tmap.TMapView
+import com.skt.Tmap.*
 
 
 @SuppressLint("UseCompatLoadingForDrawables")
@@ -41,12 +34,12 @@ class MainActivity : AppCompatActivity(), TMapGpsManager.onLocationChangedCallba
     private val mainViewModel: MainViewModel by viewModels()
     private lateinit var navView: BottomNavigationView
     private lateinit var currentPosition: Location
-    private lateinit var user: Bitmap
+    private lateinit var userMarker: Bitmap
 
     @RequiresApi(Build.VERSION_CODES.M)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        user = Bitmap.createScaledBitmap(
+        userMarker = Bitmap.createScaledBitmap(
             BitmapFactory.decodeResource(
                 resources,
                 R.drawable.navigation
@@ -132,7 +125,7 @@ class MainActivity : AppCompatActivity(), TMapGpsManager.onLocationChangedCallba
 
     private fun TMapView.setUserMarker(location: Location) {
         this.addMarkerItem("currentPosition", TMapMarkerItem().apply {
-            icon = rotatedBitmap(location.bearing, user)
+            icon = userMarker.rotate(location.bearing)
             longitude = location.longitude
             latitude = location.latitude
         })
@@ -143,9 +136,10 @@ class MainActivity : AppCompatActivity(), TMapGpsManager.onLocationChangedCallba
         this.setCenterPoint(longitude, latitude)
     }
 
-    private fun rotatedBitmap(bearing: Float, src: Bitmap): Bitmap {
-        val matrix = Matrix()
-        matrix.postRotate(bearing)
-        return Bitmap.createBitmap(src, 0, 0, src.width, src.height, matrix, true)
+    private fun Bitmap.rotate(bearing: Float): Bitmap {
+        val matrix = Matrix().apply {
+            postRotate(bearing)
+        }
+        return Bitmap.createBitmap(this, 0, 0, this.width, this.height, matrix, true)
     }
 }
