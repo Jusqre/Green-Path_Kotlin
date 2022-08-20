@@ -27,7 +27,9 @@ class WalkFragment : Fragment() {
         _binding.lifecycleOwner = viewLifecycleOwner
 
         binding.buttonRecommend.setOnClickListener {
-            Toast.makeText(this.context, "산책로 조회 클릭됨", Toast.LENGTH_SHORT).show()
+            map?.let {
+                walkViewModel.startLookUpTrail(it, this.requireContext())
+            }
         }
 
         binding.buttonMakeTrail.setOnClickListener {
