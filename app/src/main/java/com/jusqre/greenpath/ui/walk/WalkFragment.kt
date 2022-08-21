@@ -35,7 +35,7 @@ class WalkFragment : Fragment() {
         binding.buttonMakeTrail.setOnClickListener {
             Toast.makeText(this.context, "산책로 생성 클릭됨", Toast.LENGTH_SHORT).show()
             map?.let {
-                walkViewModel.startMakeTrail(it)
+                walkViewModel.startMakeTrail(it, this.requireContext())
             }
         }
 

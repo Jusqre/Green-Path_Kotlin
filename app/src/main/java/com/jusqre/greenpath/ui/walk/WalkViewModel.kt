@@ -11,6 +11,7 @@ import com.google.android.gms.tasks.Task
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.QuerySnapshot
 import com.jusqre.greenpath.util.LocationStore
+import com.jusqre.greenpath.util.TrailMaker
 import com.skt.Tmap.TMapMarkerItem
 import com.skt.Tmap.TMapPoint
 import com.skt.Tmap.TMapPolyLine
@@ -22,14 +23,39 @@ import kotlin.math.sqrt
 class WalkViewModel : ViewModel() {
     private lateinit var dbTrailList: MutableList<TMapMarkerItem>
     private lateinit var lookUpAlertDialog: AlertDialog.Builder
+    private lateinit var makeTrailDialog: AlertDialog.Builder
     @SuppressLint("StaticFieldLeak")
-    private lateinit var rangeEditText: EditText
+    private lateinit var lookUpEditText: EditText
+    @SuppressLint("StaticFieldLeak")
+    private lateinit var makeTrailEditText: EditText
 
-    fun startMakeTrail(map: TMapView) {
-        map.addMarkerItem("asdf", TMapMarkerItem().apply {
-            this.latitude = map.latitude
-            this.longitude = map.longitude
-        })
+    fun startMakeTrail(map: TMapView, context: Context) {
+        if (!::makeTrailDialog.isInitialized) {
+            initMakeTrailAlertDialog(map, context)
+        }
+        if (makeTrailEditText.parent != null) {
+            (makeTrailEditText.parent as ViewGroup).removeView(makeTrailEditText)
+        }
+        makeTrailDialog.create().show()
+    }
+
+    private fun initMakeTrailAlertDialog(map: TMapView, context: Context) {
+        makeTrailEditText = EditText(context)
+        makeTrailEditText.setText("")
+        makeTrailDialog = AlertDialog.Builder(context).apply {
+            setTitle("산책로 생성")
+            setMessage("원하는 산책로 길이를 입력하십시오.(m)")
+            setView(makeTrailEditText)
+            setPositiveButton("OK"){ _: DialogInterface?, _: Int ->
+                TrailMaker(makeTrailEditText.text.toString().toInt(), map).start()
+            }
+            setNeutralButton(
+                "RESET"
+            ) { _: DialogInterface?, _: Int ->
+                map.removeAllTMapPolyLine()
+                makeTrailEditText.setText("")
+            }
+        }
     }
 
     /** 산책로 조회 수행 */
@@ -40,8 +66,8 @@ class WalkViewModel : ViewModel() {
         if (!::lookUpAlertDialog.isInitialized) {
             initLookUpAlertDialog(map, context)
         }
-        if (rangeEditText.parent != null) {
-            (rangeEditText.parent as ViewGroup).removeView(rangeEditText)
+        if (lookUpEditText.parent != null) {
+            (lookUpEditText.parent as ViewGroup).removeView(lookUpEditText)
         }
 
         lookUpAlertDialog.create().show()
@@ -49,12 +75,12 @@ class WalkViewModel : ViewModel() {
 
     /** AlertDialog 초기화 */
     private fun initLookUpAlertDialog(map: TMapView, context: Context) {
-        rangeEditText = EditText(context)
-        rangeEditText.setText("")
+        lookUpEditText = EditText(context)
+        lookUpEditText.setText("")
         lookUpAlertDialog = AlertDialog.Builder(context).apply {
-            setTitle("산책로 추천")
-            setMessage("산책로 추천 범위를 입력하십시오.(m)")
-            setView(rangeEditText)
+            setTitle("산책로 조회")
+            setMessage("산책로 조회 범위를 입력하십시오.(m)")
+            setView(lookUpEditText)
             setPositiveButton("OK"){ _: DialogInterface?, _: Int ->
                 for (trail in dbTrailList) {
                     val tol = TMapPolyLine()
@@ -62,7 +88,7 @@ class WalkViewModel : ViewModel() {
                     tol.addLinePoint(
                         trail.tMapPoint
                     )
-                    if (tol.distance <= rangeEditText.text.toString().toInt()) {
+                    if (tol.distance <= lookUpEditText.text.toString().toInt()) {
                         map.addMarkerItem(
                             "${trail.hashCode()}",
                             trail.apply {
@@ -79,7 +105,7 @@ class WalkViewModel : ViewModel() {
                     i.visible = TMapMarkerItem.HIDDEN
                     map.setCenterPoint(map.longitude, map.latitude)
                 }
-                rangeEditText.setText("")
+                lookUpEditText.setText("")
             }
         }
     }
