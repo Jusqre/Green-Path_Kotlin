@@ -1,16 +1,14 @@
 package com.jusqre.greenpath.util
 
-import com.skt.Tmap.TMapData
-import com.skt.Tmap.TMapPoint
-import com.skt.Tmap.TMapPolyLine
-import com.skt.Tmap.TMapView
+import com.skt.Tmap.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import java.lang.Exception
 import java.util.*
 import kotlin.math.abs
 import kotlin.math.cos
+import kotlin.math.roundToInt
 
 class TrailMaker(private val distance: Int, private val map: TMapView) {
     private lateinit var userPoint: TMapPoint
@@ -27,38 +25,77 @@ class TrailMaker(private val distance: Int, private val map: TMapView) {
         val startQuadrant = Random().nextInt(4) * 2 + 1
         initRandomMarkerList(startQuadrant)
         while (phase < 7) {
+            println(phase)
             initQuadrant()
-            val peeked =
-                quadrant[if ((startQuadrant + phase) % 8 == 0) 8 else (startQuadrant + phase) % 8].peek()
-            if (peeked != null) {
-                checkInValidate(peeked)
+            var polled =
+                quadrant[if ((startQuadrant + phase) % 8 == 0) 8 else (startQuadrant + phase) % 8].poll()
+            var realPath : TMapPolyLine? = null
+            while (polled != null && realPath == null) {
+                realPath = getRealPath(polled)
+                if (realPath != null) {
+                    break
+                }
+                polled = quadrant[if ((startQuadrant + phase) % 8 == 0) 8 else (startQuadrant + phase) % 8].poll()
             }
-            if (peeked != null) {
-                totalDistance += polyLine(currentNode, peeked).distance
-                map.addMarkerItem(peeked.hashCode().toString(), marker(peeked).apply {
-                    calloutTitle = phase.toString()
-                    calloutSubTitle = totalDistance.toString()
-                    canShowCallout = true
-                })
-                map.addTMapPolyLine(phase.toString(), polyLine(currentNode, peeked))
-                currentNode = peeked
+            if (polled != null) {
+                realPath?.let {
+                    val suitablePath = getSuitablePath(it, distance / (8.0))
+                    totalDistance += suitablePath.distance
+                    map.addMarkerItem(suitablePath.hashCode().toString(), marker(suitablePath.linePoint.last()).apply {
+                        calloutTitle = phase.toString()
+                        calloutSubTitle = totalDistance.toString()
+                        canShowCallout = true
+                    })
+                    map.addTMapPolyLine(phase.toString(), suitablePath)
+                    currentNode = suitablePath.linePoint.last()
+                }
             }
             phase++
+            delay(510L)
         }
-        map.addTMapPolyLine(phase.toString(), polyLine(currentNode, userPoint))
-
+        map.addTMapPolyLine(phase.toString(), getRealPath(userPoint).apply {
+            totalDistance += this?.distance ?: 0.0
+        })
+        map.addMarkerItem("ed", TMapMarkerItem().apply {
+            canShowCallout = true
+            calloutTitle = "총 거리 : " + totalDistance.roundToInt()+ "m"
+            calloutSubTitle = "소요시간 : " + (totalDistance.roundToInt() * 60 / 5000) + "분"
+            latitude = userPoint.latitude
+            longitude = userPoint.longitude
+        })
     }
 
-    private fun checkInValidate(peeked: TMapPoint) {
-        try {
-            val real = tMapData.findPathDataWithType(
+    private fun getSuitablePath(realPath: TMapPolyLine, distanceToSearch: Double): TMapPolyLine {
+        val tempPolyLine = TMapPolyLine()
+        val pointList = realPath.linePoint
+        var left = 0
+        var right = pointList.size - 1
+        while (left < right) {
+            val mid = (left + right) / 2
+            tempPolyLine.linePoint.clear()
+            pointList.subList(0, mid).forEach {
+                tempPolyLine.addLinePoint(it)
+            }
+            if (tempPolyLine.distance > distanceToSearch) {
+                right = mid - 1
+            } else {
+                left = mid + 1
+            }
+        }
+        return tempPolyLine
+    }
+
+    private fun getRealPath(polled: TMapPoint): TMapPolyLine? {
+        println("get에 들어왔습니다.")
+        return try {
+            tMapData.findPathDataWithType(
                 TMapData.TMapPathType.PEDESTRIAN_PATH,
                 currentNode,
-                peeked
+                polled
             )
-            println(real.distance)
         } catch (e: Exception) {
             e.printStackTrace()
+            null
         }
     }
 
