@@ -11,6 +11,7 @@ import com.google.android.gms.tasks.Task
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.QuerySnapshot
 import com.jusqre.greenpath.util.LocationStore
+import com.jusqre.greenpath.util.TrailMaker
 import com.skt.Tmap.TMapMarkerItem
 import com.skt.Tmap.TMapPoint
 import com.skt.Tmap.TMapPolyLine
@@ -22,14 +23,37 @@ import kotlin.math.sqrt
 class WalkViewModel : ViewModel() {
     private lateinit var dbTrailList: MutableList<TMapMarkerItem>
     private lateinit var lookUpAlertDialog: AlertDialog.Builder
+    private lateinit var makeTrailDialog: AlertDialog.Builder
     @SuppressLint("StaticFieldLeak")
     private lateinit var rangeEditText: EditText
 
-    fun startMakeTrail(map: TMapView) {
-        map.addMarkerItem("asdf", TMapMarkerItem().apply {
-            this.latitude = map.latitude
-            this.longitude = map.longitude
-        })
+    fun startMakeTrail(map: TMapView, context: Context) {
+        if (!::makeTrailDialog.isInitialized) {
+            initMakeTrailAlertDialog(map, context)
+        }
+        if (rangeEditText.parent != null) {
+            (rangeEditText.parent as ViewGroup).removeView(rangeEditText)
+        }
+        makeTrailDialog.create().show()
+    }
+
+    private fun initMakeTrailAlertDialog(map: TMapView, context: Context) {
+        rangeEditText = EditText(context)
+        rangeEditText.setText("")
+        makeTrailDialog = AlertDialog.Builder(context).apply {
+            setTitle("산책로 생성")
+            setMessage("원하는 산책로 길이를 입력하십시오.(m)")
+            setView(rangeEditText)
+            setPositiveButton("OK"){ _: DialogInterface?, _: Int ->
+                TrailMaker(rangeEditText.text.toString().toInt(), map).start()
+            }
+            setNeutralButton(
+                "RESET"
+            ) { _: DialogInterface?, _: Int ->
+                map.removeAllTMapPolyLine()
+                rangeEditText.setText("")
+            }
+        }
     }
 
     /** 산책로 조회 수행 */
@@ -52,8 +76,8 @@ class WalkViewModel : ViewModel() {
         rangeEditText = EditText(context)
         rangeEditText.setText("")
         lookUpAlertDialog = AlertDialog.Builder(context).apply {
-            setTitle("산책로 추천")
-            setMessage("산책로 추천 범위를 입력하십시오.(m)")
+            setTitle("산책로 조회")
+            setMessage("산책로 조회 범위를 입력하십시오.(m)")
             setView(rangeEditText)
             setPositiveButton("OK"){ _: DialogInterface?, _: Int ->
                 for (trail in dbTrailList) {

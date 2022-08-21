@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<layout>
+<layout xmlns:tools="http://schemas.android.com/tools">
     <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:app="http://schemas.android.com/apk/res-auto"
-        xmlns:tools="http://schemas.android.com/tools"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         tools:context=".ui.walk.WalkFragment">
@@ -24,13 +23,15 @@
                 android:layout_height="wrap_content"
                 android:background="@android:color/white"
                 android:drawableTop="@drawable/ic_baseline_place_24"
+                android:drawableTint="@color/black"
                 android:text="@string/lookUpPath"
                 android:textColor="@color/black"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintHorizontal_weight="1"
                 app:layout_constraintLeft_toLeftOf="parent"
                 app:layout_constraintRight_toLeftOf="@id/buttonMakeTrail"
-                app:layout_constraintTop_toTopOf="parent" />
+                app:layout_constraintTop_toTopOf="parent"
+                tools:ignore="UnusedAttribute" />
 
             <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/buttonMakeTrail"
@@ -38,13 +39,15 @@
                 android:layout_height="wrap_content"
                 android:background="@android:color/white"
                 android:drawableTop="@drawable/ic_baseline_near_me_24"
+                android:drawableTint="@color/black"
                 android:text="@string/makePath"
                 android:textColor="@color/black"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintHorizontal_weight="1"
                 app:layout_constraintLeft_toRightOf="@id/buttonRecommend"
                 app:layout_constraintRight_toRightOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
+                app:layout_constraintTop_toTopOf="parent"
+                tools:ignore="UnusedAttribute" />
         </androidx.constraintlayout.widget.ConstraintLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
