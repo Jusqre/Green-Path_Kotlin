@@ -1,14 +1,12 @@
 package com.jusqre.greenpath.util
 
 import com.skt.Tmap.*
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import java.util.*
 import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.roundToInt
+import kotlin.system.exitProcess
 
 class TrailMaker(private val distance: Int, private val map: TMapView) {
     private lateinit var userPoint: TMapPoint
@@ -19,36 +17,41 @@ class TrailMaker(private val distance: Int, private val map: TMapView) {
     private var totalDistance = 0.0
     private val tMapData = TMapData()
 
-    fun start() = CoroutineScope(Dispatchers.Default).launch {
+    fun start(): Job = CoroutineScope(Dispatchers.Default).launch {
+        phase = 0
         userPoint = LocationStore.lastTmapPoint
         currentNode = userPoint
         val startQuadrant = Random().nextInt(4) * 2 + 1
         initRandomMarkerList(startQuadrant)
         while (phase < 7) {
-            println(phase)
+            val searchIndex = if ((startQuadrant + phase) % 8 == 0) 8 else (startQuadrant + phase) % 8
             initQuadrant()
-            var polled =
-                quadrant[if ((startQuadrant + phase) % 8 == 0) 8 else (startQuadrant + phase) % 8].poll()
-            var realPath : TMapPolyLine? = null
+            var polled = quadrant[searchIndex].poll()
+            var realPath: TMapPolyLine? = null
             while (polled != null && realPath == null) {
                 realPath = getRealPath(polled)
                 if (realPath != null) {
                     break
                 }
-                polled = quadrant[if ((startQuadrant + phase) % 8 == 0) 8 else (startQuadrant + phase) % 8].poll()
+                polled = quadrant[searchIndex].poll()
             }
             if (polled != null) {
                 realPath?.let {
                     val suitablePath = getSuitablePath(it, distance / (8.0))
                     totalDistance += suitablePath.distance
-                    map.addMarkerItem(suitablePath.hashCode().toString(), marker(suitablePath.linePoint.last()).apply {
-                        calloutTitle = phase.toString()
-                        calloutSubTitle = totalDistance.toString()
-                        canShowCallout = true
-                    })
+                    map.addMarkerItem(
+                        suitablePath.hashCode().toString(),
+                        marker(suitablePath.linePoint.last()).apply {
+                            calloutTitle = phase.toString()
+                            calloutSubTitle = totalDistance.toString()
+                            canShowCallout = true
+                        })
                     map.addTMapPolyLine(phase.toString(), suitablePath)
                     currentNode = suitablePath.linePoint.last()
                 }
+            } else {
+                start()
+                return@launch
             }
             phase++
             delay(510L)
@@ -58,7 +61,7 @@ class TrailMaker(private val distance: Int, private val map: TMapView) {
         })
         map.addMarkerItem("ed", TMapMarkerItem().apply {
             canShowCallout = true
-            calloutTitle = "총 거리 : " + totalDistance.roundToInt()+ "m"
+            calloutTitle = "총 거리 : " + totalDistance.roundToInt() + "m"
             calloutSubTitle = "소요시간 : " + (totalDistance.roundToInt() * 60 / 5000) + "분"
             latitude = userPoint.latitude
             longitude = userPoint.longitude
@@ -86,13 +89,17 @@ class TrailMaker(private val distance: Int, private val map: TMapView) {
     }
 
     private fun getRealPath(polled: TMapPoint): TMapPolyLine? {
-        println("get에 들어왔습니다.")
         return try {
-            tMapData.findPathDataWithType(
-                TMapData.TMapPathType.PEDESTRIAN_PATH,
-                currentNode,
-                polled
-            )
+            if (requestCount > 100) {
+                exitProcess(0)
+            } else {
+                requestCount++
+                tMapData.findPathDataWithType(
+                    TMapData.TMapPathType.PEDESTRIAN_PATH,
+                    currentNode,
+                    polled
+                )
+            }
         } catch (e: Exception) {
             e.printStackTrace()
             null
@@ -189,6 +196,10 @@ class TrailMaker(private val distance: Int, private val map: TMapView) {
 
     private fun convert(point: TMapPoint, radian: Double): TMapPoint {
         return TMapPoint(point.latitude, point.longitude * radian)
+    }
+
+    companion object {
+        var requestCount = 0
     }
 }
 
