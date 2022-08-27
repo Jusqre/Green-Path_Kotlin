@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.DialogInterface
 import android.view.ViewGroup
 import android.widget.EditText
+import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.lifecycle.ViewModel
 import com.google.android.gms.tasks.Task
@@ -24,8 +25,10 @@ class WalkViewModel : ViewModel() {
     private lateinit var dbTrailList: MutableList<TMapMarkerItem>
     private lateinit var lookUpAlertDialog: AlertDialog.Builder
     private lateinit var makeTrailDialog: AlertDialog.Builder
+
     @SuppressLint("StaticFieldLeak")
     private lateinit var lookUpEditText: EditText
+
     @SuppressLint("StaticFieldLeak")
     private lateinit var makeTrailEditText: EditText
 
@@ -46,13 +49,18 @@ class WalkViewModel : ViewModel() {
             setTitle("산책로 생성")
             setMessage("원하는 산책로 길이를 입력하십시오.(m)")
             setView(makeTrailEditText)
-            setPositiveButton("OK"){ _: DialogInterface?, _: Int ->
-                TrailMaker(makeTrailEditText.text.toString().toInt(), map).start()
+            setPositiveButton("OK") { _: DialogInterface?, _: Int ->
+                try {
+                    TrailMaker(makeTrailEditText.text.toString().toInt(), map).start()
+                } catch (e: NumberFormatException) {
+                    Toast.makeText(this.context, "길이를 입력하세요", Toast.LENGTH_SHORT).show()
+                }
             }
             setNeutralButton(
                 "RESET"
             ) { _: DialogInterface?, _: Int ->
                 map.removeAllTMapPolyLine()
+                TrailMaker.resultMarkerID.forEach { map.removeMarkerItem(it) }
                 makeTrailEditText.setText("")
             }
         }
@@ -81,7 +89,7 @@ class WalkViewModel : ViewModel() {
             setTitle("산책로 조회")
             setMessage("산책로 조회 범위를 입력하십시오.(m)")
             setView(lookUpEditText)
-            setPositiveButton("OK"){ _: DialogInterface?, _: Int ->
+            setPositiveButton("OK") { _: DialogInterface?, _: Int ->
                 for (trail in dbTrailList) {
                     val tol = TMapPolyLine()
                     tol.addLinePoint(LocationStore.lastTmapPoint)

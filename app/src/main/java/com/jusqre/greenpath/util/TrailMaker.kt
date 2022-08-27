@@ -52,12 +52,12 @@ class TrailMaker(private val distance: Int, private val map: TMapView) {
                                 calloutSubTitle = totalDistance.toString()
                                 canShowCallout = true
                             })
+                        resultMarkerID.add(suitablePath.hashCode().toString())
                         map.addTMapPolyLine(phase.toString(), suitablePath)
                         currentNode = suitablePath.linePoint.last()
                     }
                 } else {
-                    start()
-                    return@launch
+                    throw Exception()
                 }
             } catch (e: Exception) {
                 start()
@@ -76,6 +76,7 @@ class TrailMaker(private val distance: Int, private val map: TMapView) {
             latitude = userPoint.latitude
             longitude = userPoint.longitude
         })
+        resultMarkerID.add("ed")
     }
 
     /** 실제 경로로부터 distanceToSearch 길이를 만족하는 polyLine 반환 */
@@ -188,6 +189,7 @@ class TrailMaker(private val distance: Int, private val map: TMapView) {
 
     /** 100회 이상 요청하면 시스템 종료(사용제한 방지용) */
     companion object {
+        val resultMarkerID = mutableListOf<String>()
         var requestCount = 0
     }
 }
