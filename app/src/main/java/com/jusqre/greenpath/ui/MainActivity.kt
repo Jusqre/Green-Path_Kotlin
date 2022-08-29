@@ -22,6 +22,7 @@ import com.jusqre.greenpath.R
 import com.jusqre.greenpath.databinding.ActivityMainBinding
 import com.jusqre.greenpath.ui.main.MainViewModel
 import com.jusqre.greenpath.util.LocationStore
+import com.jusqre.greenpath.util.TrailStore
 import com.skt.Tmap.*
 
 
@@ -66,6 +67,9 @@ class MainActivity : AppCompatActivity(), TMapGpsManager.onLocationChangedCallba
         setupActionBarWithNavController(navController, appBarConfiguration)
         navView.setupWithNavController(navController)
 
+        if (!TrailStore.isTrailListInitialized()) {
+            TrailStore.initDBTrailInfo()
+        }
 
         map.value?.let {
             setUpGPS()
