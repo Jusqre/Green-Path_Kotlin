@@ -15,8 +15,10 @@ import com.skt.Tmap.TMapView
 class WalkViewModel : ViewModel() {
     private lateinit var lookUpAlertDialog: AlertDialog.Builder
     private lateinit var makeTrailDialog: AlertDialog.Builder
+
     @SuppressLint("StaticFieldLeak")
     private lateinit var lookUpEditText: EditText
+
     @SuppressLint("StaticFieldLeak")
     private lateinit var makeTrailEditText: EditText
 
@@ -37,13 +39,18 @@ class WalkViewModel : ViewModel() {
             setTitle("산책로 생성")
             setMessage("원하는 산책로 길이를 입력하십시오.(m)")
             setView(makeTrailEditText)
-            setPositiveButton("OK"){ _: DialogInterface?, _: Int ->
-                TrailMaker(makeTrailEditText.text.toString().toInt(), map).start()
+            setPositiveButton("OK") { _: DialogInterface?, _: Int ->
+                try {
+                    TrailMaker(makeTrailEditText.text.toString().toInt(), map).start()
+                } catch (e: NumberFormatException) {
+                    Toast.makeText(this.context, "길이를 입력하세요", Toast.LENGTH_SHORT).show()
+                }
             }
             setNeutralButton(
                 "RESET"
             ) { _: DialogInterface?, _: Int ->
                 map.removeAllTMapPolyLine()
+                TrailMaker.resultMarkerID.forEach { map.removeMarkerItem(it) }
                 makeTrailEditText.setText("")
             }
         }

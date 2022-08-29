@@ -1,14 +1,12 @@
 package com.jusqre.greenpath.util
 
 import com.skt.Tmap.*
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import java.util.*
 import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.roundToInt
+import kotlin.system.exitProcess
 
 class TrailMaker(private val distance: Int, private val map: TMapView) {
     private lateinit var userPoint: TMapPoint
@@ -19,52 +17,69 @@ class TrailMaker(private val distance: Int, private val map: TMapView) {
     private var totalDistance = 0.0
     private val tMapData = TMapData()
 
-    fun start() = CoroutineScope(Dispatchers.Default).launch {
+    /** 산책로 생성 Job
+     * - 경로 요청함수는 내부적으로 예외들을 처리하며 항상 TMapPolyLine을 반환한다.
+     *    - 경로요청이 유효하지 않을때 빈 TMapPolyLine 반환 */
+    fun start(): Job = CoroutineScope(Dispatchers.Default).launch {
+        phase = 0
         userPoint = LocationStore.lastTmapPoint
         currentNode = userPoint
         val startQuadrant = Random().nextInt(4) * 2 + 1
-        initRandomMarkerList(startQuadrant)
+        initRandomPointList(startQuadrant)
+
         while (phase < 7) {
-            println(phase)
+            val searchIndex =
+                if ((startQuadrant + phase) % 8 == 0) 8 else (startQuadrant + phase) % 8
             initQuadrant()
-            var polled =
-                quadrant[if ((startQuadrant + phase) % 8 == 0) 8 else (startQuadrant + phase) % 8].poll()
-            var realPath : TMapPolyLine? = null
-            while (polled != null && realPath == null) {
-                realPath = getRealPath(polled)
-                if (realPath != null) {
-                    break
+            try {
+                var polled: TMapPoint = quadrant[searchIndex].poll() as TMapPoint
+                var realPath = getRealPath(polled)
+                while (realPath.linePoint.size == 0) {
+                    realPath = getRealPath(polled)
+                    if (realPath.linePoint.size > 0) {
+                        break
+                    }
+                    polled = quadrant[searchIndex].poll() as TMapPoint
                 }
-                polled = quadrant[if ((startQuadrant + phase) % 8 == 0) 8 else (startQuadrant + phase) % 8].poll()
-            }
-            if (polled != null) {
-                realPath?.let {
-                    val suitablePath = getSuitablePath(it, distance / (8.0))
-                    totalDistance += suitablePath.distance
-                    map.addMarkerItem(suitablePath.hashCode().toString(), marker(suitablePath.linePoint.last()).apply {
-                        calloutTitle = phase.toString()
-                        calloutSubTitle = totalDistance.toString()
-                        canShowCallout = true
-                    })
-                    map.addTMapPolyLine(phase.toString(), suitablePath)
-                    currentNode = suitablePath.linePoint.last()
+                if (realPath.linePoint.size != 0) {
+                    realPath.let {
+                        val suitablePath = getSuitablePath(it, distance / (8.0))
+                        totalDistance += suitablePath.distance
+                        map.addMarkerItem(
+                            suitablePath.hashCode().toString(),
+                            marker(suitablePath.linePoint.last()).apply {
+                                calloutTitle = phase.toString()
+                                calloutSubTitle = totalDistance.toString()
+                                canShowCallout = true
+                            })
+                        resultMarkerID.add(suitablePath.hashCode().toString())
+                        map.addTMapPolyLine(phase.toString(), suitablePath)
+                        currentNode = suitablePath.linePoint.last()
+                    }
+                } else {
+                    throw Exception()
                 }
+            } catch (e: Exception) {
+                start()
+                return@launch
             }
             phase++
             delay(510L)
         }
         map.addTMapPolyLine(phase.toString(), getRealPath(userPoint).apply {
-            totalDistance += this?.distance ?: 0.0
+            totalDistance += this.distance
         })
         map.addMarkerItem("ed", TMapMarkerItem().apply {
             canShowCallout = true
-            calloutTitle = "총 거리 : " + totalDistance.roundToInt()+ "m"
+            calloutTitle = "총 거리 : " + totalDistance.roundToInt() + "m"
             calloutSubTitle = "소요시간 : " + (totalDistance.roundToInt() * 60 / 5000) + "분"
             latitude = userPoint.latitude
             longitude = userPoint.longitude
         })
+        resultMarkerID.add("ed")
     }
 
+    /** 실제 경로로부터 distanceToSearch 길이를 만족하는 polyLine 반환 */
     private fun getSuitablePath(realPath: TMapPolyLine, distanceToSearch: Double): TMapPolyLine {
         val tempPolyLine = TMapPolyLine()
         val pointList = realPath.linePoint
@@ -85,25 +100,27 @@ class TrailMaker(private val distance: Int, private val map: TMapView) {
         return tempPolyLine
     }
 
-    private fun getRealPath(polled: TMapPoint): TMapPolyLine? {
-        println("get에 들어왔습니다.")
-        return try {
+    /** currentNode 부터 polled 까지의 실제 경로 반환 */
+    private fun getRealPath(polled: TMapPoint): TMapPolyLine {
+        return if (requestCount > 100) {
+            exitProcess(0)
+        } else {
+            requestCount++
             tMapData.findPathDataWithType(
                 TMapData.TMapPathType.PEDESTRIAN_PATH,
                 currentNode,
                 polled
             )
-        } catch (e: Exception) {
-            e.printStackTrace()
-            null
         }
     }
 
-    private fun initRandomMarkerList(startQuadrant: Int) {
+    /** 산책로 생성에 사용될 불특정 다수의 TMapPoint 생성
+     * - 방향성을 고려하여 2개의 사분면에만 생성 */
+    private fun initRandomPointList(startQuadrant: Int) {
         randomPointList = mutableListOf()
         for (i in 0..2000) {
-            val tempLongitude = userPoint.longitude.randomLongitude(startQuadrant)
-            val tempLatitude = userPoint.latitude.randomLatitude(startQuadrant)
+            val tempLongitude = userPoint.longitude.randomLongitude(startQuadrant, distance)
+            val tempLatitude = userPoint.latitude.randomLatitude(startQuadrant, distance)
             val tempPolyLine = TMapPolyLine().apply {
                 this.addLinePoint(userPoint)
                 this.addLinePoint(TMapPoint(tempLatitude, tempLongitude))
@@ -114,26 +131,7 @@ class TrailMaker(private val distance: Int, private val map: TMapView) {
         }
     }
 
-    private fun Double.randomLongitude(startQuadrant: Int): Double {
-        return this + 0.0000113 * distance / 2 * when (startQuadrant) {
-            1 -> (Math.random() * 2 - 1)
-            3 -> (Math.random() * -1)
-            5 -> (Math.random() * 2 - 1)
-            7 -> (Math.random())
-            else -> throw Exception("어디선가 잘못됨")
-        }
-    }
-
-    private fun Double.randomLatitude(startQuadrant: Int): Double {
-        return this + 0.000009 * distance / 2 * when (startQuadrant) {
-            1 -> (Math.random())
-            3 -> (Math.random() * 2 - 1)
-            5 -> (Math.random() * -1)
-            7 -> (Math.random() * 2 - 1)
-            else -> throw Exception("어디선가 잘못됨")
-        }
-    }
-
+    /** 임의의 point들을 quadrant PQ에 init */
     private fun initQuadrant() {
         for (i in 1..8) {
             quadrant[i] = PriorityQueue(pointComparator)
@@ -146,6 +144,7 @@ class TrailMaker(private val distance: Int, private val map: TMapView) {
         }
     }
 
+    /** initial(TMapPoint)를 기준으로 target(TMapPoint)가 위치한 사분면을 반환 */
     private fun finder(target: TMapPoint, initial: TMapPoint): Quadrant {
         val radian = cos((target.latitude + initial.latitude) * Math.PI / 360)
         val cTarget = convert(target, radian)
@@ -177,6 +176,7 @@ class TrailMaker(private val distance: Int, private val map: TMapView) {
         } else Quadrant.FIRST_1
     }
 
+    /** PQ 우선순위를 expectedDistance 유사한 순서로 정렬하게 하는 Comparator */
     private val pointComparator = Comparator<TMapPoint> { o1, o2 ->
         (abs(polyLine(currentNode, o1).distance - (distance - totalDistance) / (8 - phase))
                 - abs(
@@ -187,8 +187,10 @@ class TrailMaker(private val distance: Int, private val map: TMapView) {
         )).toInt()
     }
 
-    private fun convert(point: TMapPoint, radian: Double): TMapPoint {
-        return TMapPoint(point.latitude, point.longitude * radian)
+    /** 100회 이상 요청하면 시스템 종료(사용제한 방지용) */
+    companion object {
+        val resultMarkerID = mutableListOf<String>()
+        var requestCount = 0
     }
 }
 
