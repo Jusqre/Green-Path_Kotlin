@@ -5,23 +5,14 @@ import android.content.Context
 import android.content.DialogInterface
 import android.view.ViewGroup
 import android.widget.EditText
+import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.lifecycle.ViewModel
-import com.google.android.gms.tasks.Task
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.QuerySnapshot
-import com.jusqre.greenpath.util.LocationStore
 import com.jusqre.greenpath.util.TrailMaker
-import com.skt.Tmap.TMapMarkerItem
-import com.skt.Tmap.TMapPoint
-import com.skt.Tmap.TMapPolyLine
+import com.jusqre.greenpath.util.TrailStore
 import com.skt.Tmap.TMapView
-import java.util.*
-import kotlin.math.roundToInt
-import kotlin.math.sqrt
 
 class WalkViewModel : ViewModel() {
-    private lateinit var dbTrailList: MutableList<TMapMarkerItem>
     private lateinit var lookUpAlertDialog: AlertDialog.Builder
     private lateinit var makeTrailDialog: AlertDialog.Builder
     @SuppressLint("StaticFieldLeak")
@@ -60,8 +51,8 @@ class WalkViewModel : ViewModel() {
 
     /** 산책로 조회 수행 */
     fun startLookUpTrail(map: TMapView, context: Context) {
-        if (!::dbTrailList.isInitialized) {
-            initDBTrailInfo()
+        if (!TrailStore.isTrailListInitialized()) {
+            return Toast.makeText(context,"산책로 정보를 DB에서 받아오는 중입니다.",Toast.LENGTH_SHORT).show()
         }
         if (!::lookUpAlertDialog.isInitialized) {
             initLookUpAlertDialog(map, context)
@@ -82,58 +73,14 @@ class WalkViewModel : ViewModel() {
             setMessage("산책로 조회 범위를 입력하십시오.(m)")
             setView(lookUpEditText)
             setPositiveButton("OK"){ _: DialogInterface?, _: Int ->
-                for (trail in dbTrailList) {
-                    val tol = TMapPolyLine()
-                    tol.addLinePoint(LocationStore.lastTmapPoint)
-                    tol.addLinePoint(
-                        trail.tMapPoint
-                    )
-                    if (tol.distance <= lookUpEditText.text.toString().toInt()) {
-                        map.addMarkerItem(
-                            "${trail.hashCode()}",
-                            trail.apply {
-                                visible = TMapMarkerItem.VISIBLE
-                            }
-                        )
-                    }
-                }
+                TrailStore.showTrailMarker(map, lookUpEditText.text.toString().toInt())
             }
             setNeutralButton(
                 "RESET"
             ) { _: DialogInterface?, _: Int ->
-                for (i in dbTrailList) {
-                    i.visible = TMapMarkerItem.HIDDEN
-                    map.setCenterPoint(map.longitude, map.latitude)
-                }
+                TrailStore.hideTrailMarker(map)
                 lookUpEditText.setText("")
             }
         }
     }
-
-    /** FireBase TrailInfo 초기화 */
-    private fun initDBTrailInfo() {
-        dbTrailList = mutableListOf()
-        val db = FirebaseFirestore.getInstance()
-
-        db.collection("tgreentest")
-            .get()
-            .addOnCompleteListener { task: Task<QuerySnapshot> ->
-                if (task.isSuccessful) {
-                    Objects.requireNonNull(task.result).forEach {
-                        dbTrailList.add(TMapMarkerItem().apply {
-                            tMapPoint = TMapPoint(
-                                it.getDouble("relat") ?: 0.0,
-                                it.getDouble("relng") ?: 0.0
-                            )
-                            name = it.data["name"] as String? ?: "dummy"
-                            canShowCallout = true
-                            calloutTitle = name
-                            val length = sqrt(it.getDouble("area") ?: 0.0 * 4 * 3.14).roundToInt()
-                            calloutSubTitle = "길이 : ${length}m/소요 시간 : ${(length * 60 / 5000)}분"
-                        })
-                    }
-                }
-            }
-    }
-
 }
